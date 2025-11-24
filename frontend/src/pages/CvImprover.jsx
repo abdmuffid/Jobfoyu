@@ -3,7 +3,7 @@
 import { useState } from "react"
 import MarkdownViewer from "../components/MarkdownViewer.jsx"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE
+const API_BASE = "http://localhost:8000"
 
 const CvImprover = () => {
   const [file, setFile] = useState(null)
