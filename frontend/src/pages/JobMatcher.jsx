@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import JobCard from "../components/JobCard.jsx"
 import MarkdownViewer from "../components/MarkdownViewer.jsx"
 
-const API_BASE = "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE
 
 const JobMatcher = () => {
   const [file, setFile] = useState(null)
