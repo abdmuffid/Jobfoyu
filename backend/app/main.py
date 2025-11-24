@@ -10,7 +10,7 @@ app = FastAPI(title="Job Recommender API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # di production sebaiknya spesifik domain
+    allow_origins=["https://jobfoyu.vercel.app"],  # di production sebaiknya spesifik domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
