@@ -1,25 +1,22 @@
 # app/gemini_service.py
-from google import genai
+import google.generativeai as genai
 from app.config import settings
 
 
-def _get_client() -> genai.Client:
+def configure_gemini():
+    if not settings.GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY is not set. Please configure it in .env")
+
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+
+
+def analyze_cv_gap(cv_text: str, job_desc: str) -> str:
     """
-    Membuat client Gemini SDK baru.
+    Analisis gap antara CV dan Job Description menggunakan Gemini.
+    Output: Markdown (biar gampang dirender di frontend).
     """
-    api_key = settings.GEMINI_API_KEY
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY belum diset. Tambahkan ke file .env di folder backend.")
-
-    client = genai.Client(api_key=api_key)
-    return client
-
-
-def analyze_cv_gap(cv_text: str, job_description: str) -> str:
-    try:
-        client = _get_client()
-    except RuntimeError as e:
-        return f"Error konfigurasi Gemini: {e}"
+    configure_gemini()
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
 Konteks:
@@ -27,62 +24,53 @@ Kamu berperan sebagai career coach profesional yang empatik, realistis, dan mema
 Tugasmu adalah menganalisis kecocokan antara **CV kandidat** dan **Job Description** secara mendalam.
 
 Gaya komunikasi:
-- santai, hangat, dan menggunakan kata "kamu",
-- tidak menggurui, tapi tetap jujur,
-- tidak membual atau memberi pujian berlebihan,
-- fokus pada insight yang berguna dan actionable,
-- hindari angka atau skor evaluasi.
+- santai, hangat, pakai kata "kamu",
+- jujur tapi tidak menusuk,
+- tidak memberikan pujian berlebihan,
+- fokus pada insight yang actionable dan relevan,
+- hindari angka dalam penilaian.
 
 Model berpikir:
-- jelaskan kekuatan kandidat secara spesifik (berbasis bukti yang muncul di CV),
-- jelaskan gap secara objektif, tanpa menakut-nakuti,
-- arahkan kandidat supaya tahu apa yang bisa ia lakukan setelah membaca feedback.
+- jelaskan kekuatan kandidat dengan merujuk bukti nyata dari CV,
+- jelaskan gap secara objektif,
+- berikan arahan jelas agar kandidat tahu apa yang bisa ditingkatkan.
 
-Tujuan akhir:
-Kandidat bisa memahami — tanpa merasa kecil hati — apakah ia sudah cocok untuk posisi ini, bagian mana yang kuat, apa yang kurang, dan apa langkah paling realistis untuk meningkatkan peluang diterima.
-
+INPUT:
+----------------
 CV KANDIDAT:
 ----------------
 {cv_text[:6000]}
 
 JOB DESCRIPTION:
 ----------------
-{job_description[:3000]}
+{job_desc[:3000]}
 
-Tolong berikan jawaban dalam format **Markdown** dengan struktur berikut:
+OUTPUT (Gunakan format Markdown):
 
 ### 1. Gambaran umum kecocokan kamu
-- Jelaskan seberapa relevan CV kamu dengan posisi ini secara jujur tapi menenangkan.
-- Jangan memakai skor angka.
+- Ringkas tingkat cocoknya secara jujur dan menenangkan.
 
 ### 2. Bagian CV kamu yang sudah kuat
-- Sebutkan poin-poin kekuatan yang benar-benar muncul dari CV.
-- Hubungkan kekuatan itu dengan kebutuhan di JD.
+- Jelaskan kekuatan dengan spesifik + relevansinya dengan JD.
 
 ### 3. Area yang perlu kamu tingkatkan
-- Sebutkan gap yang paling signifikan.
-- Fokus pada skill teknis, tools, sertifikasi, pengalaman project, atau soft skill.
-- Hindari kalimat yang merendahkan.
+- Sebutkan gap tanpa mengecilkan kandidat.
+- Fokus pada skill, pengalaman, tools, soft skill, atau portfolio.
 
 ### 4. Rekomendasi perbaikan yang bisa kamu lakukan
-- Berikan panduan yang benar-benar bisa dieksekusi (realistic & specific).
-- Contoh yang diperbolehkan: jenis proyek portfolio yang bisa dibuat, skill yang layak dipelajari duluan, atau cara meng-highlight pengalaman di CV.
+- Berikan langkah-langkah riil dan bisa dieksekusi.
+- Misal: proyek portfolio, skill prioritas, cara menulis ulang poin CV.
 
-### 5. Contoh "Professional Summary" yang bisa kamu pasang di CV
-- Buat 2–3 kalimat dalam bahasa Indonesia atau bahasa inggris sesuai cv yang diunggah user,
-- sesuai dengan gaya industri,
-- mencerminkan kelebihan kandidat dan posisi di JD.
+### 5. Contoh Professional Summary yang bisa kamu pasang di CV
+- 2–3 kalimat tajam dan profesional.
+- Sesuaikan dengan role pada JD.
+- Langsung siap dipakai.
 
-Catatan akhir:
-- Tidak perlu memotivasi secara berlebihan.
-- Cukup akhiri dengan nada optimis dan realistis.
+Akhiri dengan tone optimis namun realistis.
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
-        return response.text
+        resp = model.generate_content(prompt)
+        return resp.text
     except Exception as e:
         return f"Terjadi error saat menghubungi AI: {e}"

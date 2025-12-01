@@ -21,7 +21,7 @@ const CvImprover = () => {
       setError("Silakan upload CV (PDF) terlebih dahulu.")
       return
     }
-    if (jobDesc.trim().length < 30) {
+    if (jobDesc.trim().length < 10) {
       setError("Job description terlalu pendek. Tambahkan minimal 30 karakter.")
       return
     }

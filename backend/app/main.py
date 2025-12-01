@@ -8,6 +8,7 @@ from app.gemini_service import analyze_cv_gap
 
 app = FastAPI(title="Job Recommender API")
 
+# Sesuaikan origin dengan URL frontend kamu
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # di production sebaiknya spesifik domain
@@ -33,7 +34,7 @@ async def match_jobs(
     Halaman 1: Job Matcher
     - Upload CV (PDF)
     - Cocokkan dengan dataset job
-    - Return list job dengan match_percentage + description
+    - Return list job dengan match_percentage
     """
     filename = file.filename.lower()
     if not filename.endswith(".pdf"):
@@ -42,7 +43,7 @@ async def match_jobs(
     file_bytes = await file.read()
     cv_text = extract_text_from_pdf(file_bytes)
 
-    if not cv_text or len(cv_text) < 50:
+    if not cv_text or len(cv_text) < 10:
         raise HTTPException(
             status_code=400,
             detail="Teks CV terlalu pendek atau gagal diekstrak. Pastikan PDF dapat di-copy text-nya."
@@ -68,14 +69,10 @@ async def analyze_gap(
     job_desc: str = Form(..., description="Job description target"),
 ):
     """
-    Dipakai oleh:
-    - Halaman CV Improver
-    - Tombol "Analisis Gap CV vs Job ini" di Job Matcher
-
-    Flow:
+    Halaman 2: CV Improver
     - Upload CV (PDF)
-    - Kirim job_desc (bisa dari input user, bisa dari description job)
-    - AI balas dengan analisis gap dalam Markdown, gaya ngobrol.
+    - Input job description
+    - Return analisis AI dalam bentuk Markdown
     """
     filename = file.filename.lower()
     if not filename.endswith(".pdf"):
@@ -84,13 +81,13 @@ async def analyze_gap(
     file_bytes = await file.read()
     cv_text = extract_text_from_pdf(file_bytes)
 
-    if not cv_text or len(cv_text) < 50:
+    if not cv_text or len(cv_text) < 10:
         raise HTTPException(
             status_code=400,
             detail="Teks CV terlalu pendek atau gagal diekstrak. Pastikan PDF dapat di-copy text-nya."
         )
 
-    if len(job_desc.strip()) < 30:
+    if len(job_desc.strip()) < 10:
         raise HTTPException(
             status_code=400,
             detail="Job description terlalu pendek. Tambahkan detail tugas dan kualifikasi."
